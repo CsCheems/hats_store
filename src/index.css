@@ -1,0 +1,281 @@
+@import 'tailwindcss';
+
+/* ── Nicol Hats · versión A «Taller» ───────────────────────────────────────────
+   Un taller de sombreros: fondos planos, líneas finas de 1px, títulos en
+   Fraunces, texto en Barlow, y las fotos con una sombra de 1px. Sin marcos, sin
+   marcos ni texturas. La tienda tiene DOS modos —claro por defecto y
+   oscuro— y los dos son solo un juego de variables: cambiar de modo reasigna las
+   de abajo y nada más.
+
+   Los tokens de color conservan los nombres de siempre (ink, panel, paper,
+   gold…) pero son variables semánticas:
+
+     ink     → el fondo de la página        paper → el texto principal
+     panel   → fondo alterno de una banda   sand  → el texto secundario
+     rail    → líneas finas                 edge  → líneas de campos y contornos
+     gold    → el acento                    field → el fondo de un campo
+     rust    → el ámbar de error
+
+   Contrastes medidos: texto sobre fondo 17.4:1 (claro) y 15.8:1 (oscuro);
+   secundario 7.2:1 y 10.8:1; acento 5.5:1 (teja) y 7.8:1 (oro); ámbar de error
+   4.6:1 y 7.4:1; tinta sobre el oro de los botones 7.8:1. El oro NO se usa como
+   color de texto sobre el fondo claro (2.0:1): ahí el acento es el teja. El
+   verde salvia del sistema original sigue fuera. */
+:root {
+  --bg-a: #faf6ea;
+  --alt: #f2ebd9;
+  --fg: #14110d;
+  --muted: #5b513d;
+  --line: #d6cbae;
+  --edge: #5b513d;
+  --accent: #a8461a;
+  --field: #fffdf6;
+  --hover: #14110d;
+  --on-hover: #f2ebd9;
+  --amber: #b45309;
+  --photo-a: #e7ddc3;
+  --photo-b: #e0d5b8;
+  --shadow: rgb(20 17 13 / 0.22);
+  --band-hero: linear-gradient(
+    #f6ead0 0 38%,
+    #f0cf94 38% 52%,
+    #e6a758 52% 64%,
+    #d9822b 64% 72%,
+    #e7ddc3 72%
+  );
+  --band-brand: linear-gradient(
+    #efe3c4 0 30%,
+    #e3c48a 30% 46%,
+    #d9822b 46% 58%,
+    #c9a227 58% 70%,
+    #e7ddc3 70%
+  );
+}
+
+:root[data-theme='dark'] {
+  --bg-a: #14110d;
+  --alt: #1f1a13;
+  --fg: #f2ebd9;
+  --muted: #cfc3a6;
+  --line: #3a3226;
+  --edge: #8a7e64;
+  --accent: #c9a227;
+  --field: #14110d;
+  --hover: #f2ebd9;
+  --on-hover: #14110d;
+  --amber: #e0903a;
+  --photo-a: #2a2318;
+  --photo-b: #241e15;
+  --shadow: rgb(0 0 0 / 0.5);
+  --band-hero: linear-gradient(
+    #2a2016 0 42%,
+    #a8461a 42% 56%,
+    #d9822b 56% 70%,
+    #e3b04a 70% 82%,
+    #14110d 82%
+  );
+  --band-brand: linear-gradient(
+    #14110d 0 30%,
+    #5b513d 30% 44%,
+    #a8461a 44% 60%,
+    #d9822b 60% 72%,
+    #2a2016 72%
+  );
+}
+
+@theme inline {
+  --color-ink: var(--bg-a);
+  --color-panel: var(--alt);
+  --color-rail: var(--line);
+  --color-edge: var(--edge);
+  --color-field: var(--field);
+  --color-paper: var(--fg);
+  --color-sand: var(--muted);
+  --color-stone: var(--muted);
+  --color-dust: var(--muted);
+  --color-gold: var(--accent);
+  --color-buck: var(--accent);
+  --color-leather: var(--accent);
+  --color-barn: var(--accent);
+  --color-rust: var(--amber);
+  --color-bone: var(--fg);
+  --color-notice: var(--fg);
+  --color-hover: var(--hover);
+  --color-on-hover: var(--on-hover);
+}
+
+@theme {
+  /* Constantes de marca: no cambian con el modo. */
+  --color-plate: #e7ddc3;
+  --color-oro: #c9a227;
+  --color-tinta: #14110d;
+  --color-pergamino: #f2ebd9;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Barlow', system-ui, sans-serif;
+
+  --text-h1: clamp(48px, 6.4vw, 100px);
+  --text-h1--line-height: 1;
+  --text-h2: clamp(36px, 4.6vw, 64px);
+  --text-h2--line-height: 1.05;
+  --text-h3: clamp(28px, 3vw, 40px);
+  --text-h3--line-height: 1.1;
+  --text-wordmark: clamp(24px, 2.2vw, 30px);
+  --text-wordmark--line-height: 1.1;
+
+  --spacing-gutter: clamp(20px, 3.4vw, 48px);
+  --container-shell: 1360px;
+
+  --tracking-kicker: 0.3em;
+  --tracking-label: 0.2em;
+  --tracking-wide: 0.16em;
+
+  --ease-track: cubic-bezier(0.55, 0.05, 0.25, 1);
+
+  /* Espera del envío del formulario: un filete de 1px que barre el borde del
+     botón. Sin puntos ni ruedas girando. */
+  --animate-sweep: sweep 1.1s var(--ease-track) infinite;
+
+  @keyframes sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+
+  /* Entrada del modal: el overlay funde y el panel sube 8px. */
+  --animate-overlay-in: overlay-in 200ms var(--ease-track) both;
+  --animate-panel-in: panel-in 260ms var(--ease-track) both;
+
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+/* La superficie de lo que flota o se enmarca —desplegables, modal, avisos,
+   filtros—: el fondo de la página, una línea de 1px y la única sombra de la
+   tienda, de 1px. Sigue las variables del modo, sin redefinirlas. `surface-thin`
+   usa la línea suave de los divisores. */
+@utility surface {
+  position: relative;
+  background: var(--bg-a);
+  color: var(--fg);
+  border: 1px solid var(--edge);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+@utility surface-thin {
+  position: relative;
+  background: var(--bg-a);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+/* El espacio de una foto: franjas diagonales finas y la sombra de 1px. */
+@utility photo {
+  background: repeating-linear-gradient(135deg, var(--photo-a) 0 14px, var(--photo-b) 14px 28px);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+/* ── Parallax ───────────────────────────────────────────────────────────────
+   CSS puro, con `animation-timeline: view()`: el medio se desplaza ±9% de su
+   alto mientras la sección cruza la ventana, y parte centrado, así que en
+   reposo no se mueve nada. Donde el navegador no lo soporta (Firefox por ahora)
+   la imagen se queda quieta y no pasa nada. Con `prefers-reduced-motion` se
+   apaga. */
+@keyframes drift {
+  from {
+    transform: translateY(-9%);
+  }
+  to {
+    transform: translateY(9%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .parallax {
+      animation: drift linear both;
+      animation-timeline: view();
+    }
+  }
+}
+
+/* ── El panel de administración ────────────────────────────────────────────────
+   OTRO SISTEMA DE DISEÑO, no una variante del de arriba. El panel es una
+   herramienta interna y tiene que notarse al primer vistazo que no estás en la
+   tienda: azules y grises sobre lienzo claro, radio suave, sombra de un pelo.
+   El modo oscuro NO cruza esta frontera.
+
+   Todos los tokens llevan prefijo `admin-`, y ese prefijo es justamente la
+   frontera: un `bg-ink` colado en el panel —o un `bg-admin-card` colado en la
+   tienda— salta a la vista leyendo el diff, sin tener que abrir el archivo.
+
+   Los contrastes están comprobados contra AA sobre su fondo, que es la misma
+   regla que deja fuera el salvia del sistema original: `admin-muted` da 5.8:1
+   sobre la tarjeta y 4.9:1 sobre el lienzo, `admin-blue` 5.3:1, `admin-good`
+   5.4:1, `admin-warn` 5.0:1, y el gris del lateral 6.4:1 sobre el navy. */
+@theme {
+  --color-admin-navy: #0f1c2e;
+  --color-admin-slate: #1c2b40;
+  --color-admin-canvas: #eef1f5;
+  --color-admin-card: #ffffff;
+  --color-admin-line: #d7dce4;
+  --color-admin-ink: #16202e;
+  --color-admin-muted: #5b6878;
+  --color-admin-sidebar: #b8c4d4;
+  --color-admin-bright: #f5f8fc;
+  --color-admin-blue: #2563eb;
+  --color-admin-sky: #dbeafe;
+  --color-admin-good: #0f766e;
+  --color-admin-warn: #b45309;
+
+  /* El radio también es token: si no, «6px» acaba escrito a mano en veinte
+     sitios y cambiarlo deja diecinueve. La capa base resetea button e input a
+     0, así que cada control del panel tiene que pedirlo — y eso hace visible la
+     frontera en el propio JSX. */
+  --radius-admin: 6px;
+
+  /* Una sombra de 1px, y solo en las tarjetas. Es lo que hace que un lienzo
+     claro se lea por capas; más que esto sería otro sitio web. */
+  --shadow-admin: 0 1px 2px rgb(15 28 46 / 0.07);
+}
+
+@layer base {
+  body {
+    @apply bg-ink font-sans text-paper;
+    text-wrap: pretty;
+    -webkit-font-smoothing: antialiased;
+    transition:
+      background-color 0.3s,
+      color 0.3s;
+  }
+
+  /* Radio 0 en todo — regla del design system. La jerarquía se construye con
+     líneas finas, nunca con esquinas redondeadas. */
+  button,
+  input {
+    border-radius: 0;
+  }
+
+  ::selection {
+    background: rgb(201 162 39 / 0.4);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
