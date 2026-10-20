@@ -17,6 +17,12 @@ import { AdminCard } from './AdminCard'
  *
  * Recibe el producto con la forma que espera la tarjeta ({ foto, titulo, precio,
  * disponible }); armarlo con lo que se está escribiendo es cosa de la página.
+ *
+ * El recuadro es `inert`: la tarjeta es de verdad y lleva enlaces a la ficha y el
+ * marcador de favoritos, pero el artículo del formulario no tiene todavía (o no
+ * tiene) un slug al que ir, y un clic llevaría a /producto/undefined. `inert`
+ * quita de golpe los clics, el foco y el hover sin tocar la tarjeta, que sigue
+ * siendo la misma que ve la tienda.
  */
 export function AdminCardPreview({ product, categoria, borrador = false }) {
   return (
@@ -24,7 +30,7 @@ export function AdminCardPreview({ product, categoria, borrador = false }) {
       <h2 className="text-[15px] text-admin-ink">{productFormCopy.vistaPrevia}</h2>
       <p className="mt-1 text-[12px] text-admin-muted">{productFormCopy.vistaPreviaNota}</p>
 
-      <div className="tema-claro mt-4 rounded-admin border border-admin-line bg-ink p-4">
+      <div inert className="tema-claro mt-4 rounded-admin border border-admin-line bg-ink p-4">
         <CatalogCard product={product} categoria={categoria} />
       </div>
 
