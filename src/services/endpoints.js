@@ -14,7 +14,20 @@ export const ENDPOINTS = {
   },
   products: {
     list: '/products',
-    detail: (id) => `/products/${id}`,
+    // Los slugs solo llevan [a-z0-9-], pero la ruta la compone este archivo y no
+    // debería depender de lo que la base decida admitir.
+    detail: (id) => `/products/${encodeURIComponent(id)}`,
+    // Leer las reseñas es público; escribirlas (`resenas`) pide sesión.
+    reviews: (id) => `/products/${encodeURIComponent(id)}/resenas`,
+  },
+  // Lo de cada persona. Todo pide sesión: sin ella el servidor responde 401.
+  favoritos: '/favoritos',
+  favorito: (id) => `/favoritos/${encodeURIComponent(id)}`,
+  carrito: '/carrito',
+  carritoItem: (id) => `/carrito/${encodeURIComponent(id)}`,
+  resenas: {
+    one: (id) => `/resenas/${encodeURIComponent(id)}`,
+    mine: (id) => `/resenas/${encodeURIComponent(id)}/mia`,
   },
   // Países y estados para los desplegables del alta y del perfil. Sin sesión.
   ubicaciones: '/ubicaciones',

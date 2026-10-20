@@ -3,9 +3,11 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { AdminBadge } from '../../../components/admin/AdminBadge'
 import { AdminButton } from '../../../components/admin/AdminButton'
 import { AdminCard } from '../../../components/admin/AdminCard'
+import { AdminCardPreview } from '../../../components/admin/AdminCardPreview'
 import { AdminField } from '../../../components/admin/AdminField'
 import { AdminFormHeader } from '../../../components/admin/AdminFormHeader'
 import { AdminGallery } from '../../../components/admin/AdminGallery'
+import { AdminImagePicker } from '../../../components/admin/AdminImagePicker'
 import { AdminNotice } from '../../../components/admin/AdminNotice'
 import { AdminState } from '../../../components/admin/AdminState'
 import {
@@ -18,6 +20,7 @@ import {
 } from '../../../data/admin'
 import { useApiResource } from '../../../hooks/useApiResource'
 import { useForm } from '../../../hooks/useForm'
+import { useImagePick } from '../../../hooks/useImagePick'
 import { useRouteNotice } from '../../../hooks/useRouteNotice'
 import {
   createProduct,
@@ -25,6 +28,7 @@ import {
   getProduct,
   restoreProduct,
   updateProduct,
+  uploadProductImage,
 } from '../../../services/admin'
 import { validateProduct } from '../../../utils/validation'
 
@@ -92,6 +96,12 @@ function Editor({ catalogos, inicial }) {
   const [aviso, setAviso] = useState(null)
 
   const editando = Boolean(producto)
+
+  // Las imágenes del alta (hasta 8): se eligen aquí y se suben al crear, porque
+  // la ruta de subida necesita el artículo ya creado. En la edición no se usan;
+  // ahí manda la galería.
+  const { imagenes, errores: erroresImagen, avisos: avisosImagen, elegir, quitar, hacerPrincipal } = useImagePick()
+
   const categoriaDe = useCallback(
     (slug) => catalogos.categorias.find((entrada) => entrada.id === slug),
     [catalogos],
@@ -116,11 +126,38 @@ function Editor({ catalogos, inicial }) {
         } else {
           const creado = await createProduct(values)
           recargarCategorias()
+
+          // El artículo ya existe. Si una imagen falla no se deshace nada: se dice
+          // y la galería de la edición queda a mano para reintentar. Las subidas
+          // van DE UNA EN UNA y en el orden elegido —el orden de la galería es el
+          // de llegada, y en paralelo se sortearía—, y cada una tiene su propio
+          // try para que un fallo no se confunda con el del alta ni corte las
+          // demás.
+          let aviso = adminNotices.creado
+          if (imagenes.length) {
+            let subidas = 0
+            let motivo = ''
+
+            for (const { file } of imagenes) {
+              try {
+                await uploadProductImage(creado.id, file)
+                subidas += 1
+              } catch (errorSubida) {
+                motivo = errorSubida.message
+              }
+            }
+
+            const fallidas = imagenes.length - subidas
+            aviso = fallidas
+              ? adminNotices.creadoSinImagen(fallidas, motivo)
+              : adminNotices.creadoConImagenes(subidas)
+          }
+
           // replace: «atrás» desde la edición no debe volver a un formulario de
           // alta que ya se usó.
           navigate(`/admin/articulos/${creado.id}`, {
             replace: true,
-            state: { aviso: adminNotices.creado },
+            state: { aviso },
           })
         }
       } catch (error) {
@@ -130,7 +167,7 @@ function Editor({ catalogos, inicial }) {
         throw error
       }
     },
-    [editando, producto, navigate, recargarCategorias],
+    [editando, producto, imagenes, navigate, recargarCategorias],
   )
 
   const { formRef, values, errors, pending, handleChange, handleSubmit } = useForm({
@@ -141,27 +178,33 @@ function Editor({ catalogos, inicial }) {
 
   const categoria = categoriaDe(values.categoria)
 
-  // Cambiar de categoría limpia lo que deja de valer: una marca que no la
-  // trabaja, un género o un fieltro que no lleva. Si no, el formulario enviaría
-  // una combinación que el servidor va a rechazar, con el campo ya escondido.
+  // Cambiar de categoría limpia lo que deja de valer: un género o un fieltro que
+  // no lleva. Si no, el formulario enviaría una combinación que el servidor va a
+  // rechazar, con el campo ya escondido.
   const onChange = useCallback(
     (name, value) => {
       handleChange(name, value)
       if (name !== 'categoria') return
 
       const nueva = categoriaDe(value)
-      if (!nueva?.marcas.includes(values.marca)) handleChange('marca', '')
       if (!nueva?.llevaGenero) handleChange('genero', '')
       if (!nueva?.admiteFieltro) handleChange('fieltro', '')
     },
-    [handleChange, categoriaDe, values.marca],
+    [handleChange, categoriaDe],
   )
 
-  const opciones = (field) => {
-    if (field.options === 'marcas') {
-      return categoria ? catalogos.marcas.filter((marca) => categoria.marcas.includes(marca.id)) : []
-    }
-    return catalogos[field.options]
+  const opciones = (field) => catalogos[field.options]
+
+  // Lo que ve la vista previa: la tarjeta del catálogo con lo que se está
+  // escribiendo. La foto es la elegida (alta) o la principal de la galería
+  // (edición); sin ninguna, la tarjeta dibuja su hueco. Una tarjeta vacía no
+  // enseña «NaN»: título, categoría y precio caen a un valor de relleno.
+  const precio = Number(values.precio)
+  const productoVista = {
+    foto: editando ? (producto.imagenes[0]?.url ?? null) : (imagenes[0]?.url ?? null),
+    titulo: values.titulo.trim() || productFormCopy.vistaPreviaTitulo,
+    precio: Number.isFinite(precio) && precio > 0 ? precio : 0,
+    disponible: Number(values.stock) > 0,
   }
 
   const restaurar = async () => {
@@ -178,7 +221,7 @@ function Editor({ catalogos, inicial }) {
   const visible = aviso ?? (avisoRuta ? { tone: 'good', texto: avisoRuta } : null)
 
   return (
-    <div className="max-w-[880px]">
+    <div className="max-w-[1240px]">
       <Cabecera titulo={editando ? productFormCopy.editarTitulo : productFormCopy.nuevoTitulo}>
         {editando ? (
           <>
@@ -213,79 +256,112 @@ function Editor({ catalogos, inicial }) {
         </AdminNotice>
       )}
 
-      <AdminCard
-        as="form"
-        ref={formRef}
-        onSubmit={handleSubmit}
-        noValidate
-        aria-busy={pending}
-        className="p-[clamp(16px,2.4vw,24px)]"
-      >
-        {SECCIONES.map((seccion, index) => {
-          const campos = productFields.filter(
-            (field) => field.seccion === seccion && (!field.visibleIf || categoria?.[field.visibleIf]),
-          )
+      {/* Formulario y galería a la izquierda; la vista previa a la derecha, fija
+          al hacer scroll en pantallas anchas (60px de la barra superior más aire).
+          En estrechas la previa baja debajo, a todo el ancho. */}
+      <div className="grid items-start gap-[18px] lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+          <AdminCard
+            as="form"
+            ref={formRef}
+            onSubmit={handleSubmit}
+            noValidate
+            aria-busy={pending}
+            className="p-[clamp(16px,2.4vw,24px)]"
+          >
+            {SECCIONES.map((seccion, index) => {
+              const campos = productFields.filter(
+                (field) => field.seccion === seccion && (!field.visibleIf || categoria?.[field.visibleIf]),
+              )
 
-          return (
-            <fieldset
-              key={seccion}
-              className={`min-w-0 ${index > 0 ? 'mt-5 border-t border-admin-line pt-5' : ''}`}
-            >
-              <legend className="mb-3 text-[12px] tracking-wide text-admin-muted uppercase">
-                {productFormCopy.secciones[seccion]}
-              </legend>
+              return (
+                <fieldset
+                  key={seccion}
+                  className={`min-w-0 ${index > 0 ? 'mt-5 border-t border-admin-line pt-5' : ''}`}
+                >
+                  <legend className="mb-3 text-[12px] tracking-wide text-admin-muted uppercase">
+                    {productFormCopy.secciones[seccion]}
+                  </legend>
 
-              <div className={`grid gap-4 ${REJILLA[seccion]}`}>
-                {campos.map((field) => {
-                  const lista = field.type === 'select' ? opciones(field) : undefined
-                  const sinOpciones = field.dependsOn && !values[field.dependsOn]
-                  const listaVacia = !sinOpciones && field.noOptionsPlaceholder && lista?.length === 0
+                  <div className={`grid gap-4 ${REJILLA[seccion]}`}>
+                    {campos.map((field) => {
+                      const lista = field.type === 'select' ? opciones(field) : undefined
+                      const sinOpciones = field.dependsOn && !values[field.dependsOn]
+                      const listaVacia = !sinOpciones && field.noOptionsPlaceholder && lista?.length === 0
 
-                  return (
-                    <AdminField
-                      key={field.name}
-                      field={field}
-                      value={values[field.name]}
-                      error={errors[field.name]}
-                      options={lista}
-                      placeholder={
-                        sinOpciones
-                          ? field.emptyPlaceholder
-                          : listaVacia
-                            ? field.noOptionsPlaceholder
-                            : undefined
-                      }
-                      disabled={pending || Boolean(sinOpciones)}
-                      onChange={onChange}
-                    />
-                  )
-                })}
-              </div>
-            </fieldset>
-          )
-        })}
+                      return (
+                        <AdminField
+                          key={field.name}
+                          field={field}
+                          value={values[field.name]}
+                          error={errors[field.name]}
+                          options={lista}
+                          placeholder={
+                            sinOpciones
+                              ? field.emptyPlaceholder
+                              : listaVacia
+                                ? field.noOptionsPlaceholder
+                                : undefined
+                          }
+                          disabled={pending || Boolean(sinOpciones)}
+                          onChange={onChange}
+                        />
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              )
+            })}
 
-        <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-admin-line pt-5">
-          <AdminButton to="/admin/productos" aria-disabled={pending}>
-            {productFormCopy.cancelar}
-          </AdminButton>
-          <AdminButton type="submit" variant="primary" disabled={pending}>
-            {editando
-              ? pending
-                ? productFormCopy.guardando
-                : productFormCopy.guardar
-              : pending
-                ? productFormCopy.creando
-                : productFormCopy.crear}
-          </AdminButton>
+            {/* Solo en el alta: en la edición la imagen se maneja en la galería. */}
+            {!editando && (
+              <fieldset className="mt-5 min-w-0 border-t border-admin-line pt-5">
+                <legend className="mb-3 text-[12px] tracking-wide text-admin-muted uppercase">
+                  {productFormCopy.secciones.imagen}
+                </legend>
+                <AdminImagePicker
+                  imagenes={imagenes}
+                  errores={erroresImagen}
+                  avisos={avisosImagen}
+                  disabled={pending}
+                  onPick={elegir}
+                  onRemove={quitar}
+                  onMakeMain={hacerPrincipal}
+                />
+              </fieldset>
+            )}
+
+            <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-admin-line pt-5">
+              <AdminButton to="/admin/productos" aria-disabled={pending}>
+                {productFormCopy.cancelar}
+              </AdminButton>
+              <AdminButton type="submit" variant="primary" disabled={pending}>
+                {editando
+                  ? pending
+                    ? productFormCopy.guardando
+                    : productFormCopy.guardar
+                  : pending
+                    ? productFormCopy.creando
+                    : productFormCopy.crear}
+              </AdminButton>
+            </div>
+          </AdminCard>
+
+          {editando && (
+            <div className="mt-[18px]">
+              <AdminGallery product={producto} onChange={setProducto} />
+            </div>
+          )}
         </div>
-      </AdminCard>
 
-      {editando && (
-        <div className="mt-[18px]">
-          <AdminGallery product={producto} onChange={setProducto} />
+        <div className="lg:sticky lg:top-[78px]">
+          <AdminCardPreview
+            product={productoVista}
+            categoria={categoria?.label ?? productFormCopy.vistaPreviaCategoria}
+            borrador={!values.publicado}
+          />
         </div>
-      )}
+      </div>
     </div>
   )
 }

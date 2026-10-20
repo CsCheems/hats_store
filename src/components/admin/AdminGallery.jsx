@@ -2,33 +2,11 @@ import { ImagePlus } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { adminConfirm, galleryCopy } from '../../data/admin'
 import { removeProductImage, setPrincipalImage, uploadProductImage } from '../../services/admin'
+import { MAX_IMAGENES, recomendada, revisarImagen, TIPOS } from '../../utils/imageRules'
 import { AdminButton } from './AdminButton'
 import { AdminCard } from './AdminCard'
 import { AdminDialog } from './AdminDialog'
 import { AdminNotice } from './AdminNotice'
-
-// Los mismos topes que el servidor y que el bucket (db/scripts/10). Aquí solo
-// sirven para no subir 5 MB que se van a rechazar: quien decide es el servidor.
-const TIPOS = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_BYTES = 5 * 1024 * 1024
-const MAX_IMAGENES = 8
-
-// La recomendación de CLAUDE.md para producto: vertical 4:5, 1000 × 1250 o más.
-const recomendada = ({ width, height }) =>
-  width >= 1000 && height >= 1250 && Math.abs(width / height - 0.8) <= 0.02
-
-// Las medidas reales del archivo, sin subirlo. Si el navegador no sabe leerlo
-// devuelve null y simplemente no se avisa: el servidor dirá lo suyo.
-async function medir(file) {
-  try {
-    const bitmap = await createImageBitmap(file)
-    const medidas = { width: bitmap.width, height: bitmap.height }
-    bitmap.close()
-    return medidas
-  } catch {
-    return null
-  }
-}
 
 /**
  * La galería de un artículo: subir, elegir la principal y quitar.
@@ -64,16 +42,14 @@ export function AdminGallery({ product, onChange }) {
         avisar('warn', galleryCopy.llena)
         break
       }
-      if (!TIPOS.includes(file.type)) {
-        avisar('warn', galleryCopy.errorTipo(file.name))
-        continue
-      }
-      if (file.size > MAX_BYTES) {
-        avisar('warn', galleryCopy.errorPeso(file.name))
+      // Si el navegador no puede leer las medidas se sube igualmente: el
+      // servidor las lee de la cabecera y dirá lo suyo.
+      const { error, medidas } = await revisarImagen(file)
+      if (error) {
+        avisar('warn', error)
         continue
       }
 
-      const medidas = await medir(file)
       setSubiendo(file.name)
 
       try {

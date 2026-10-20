@@ -118,15 +118,16 @@ export function NavMobileTools({ bagCount, closeMenu }) {
 
         {/* La regla vertical cuelga de la segunda celda para que no haga falta un
             hijo extra en la rejilla. */}
-        <button
-          type="button"
+        <Link
+          to="/carrito"
+          onClick={closeMenu}
           aria-label={`Bolsa de compra, ${bagCount} artículos`}
-          className={`${CELDA} cursor-pointer border-l border-l-rail text-paper`}
+          className={`${CELDA} border-l border-l-rail text-paper`}
         >
           <ShoppingBag size={17} strokeWidth={1.5} />
           <span>Bolsa</span>
           <span>{bagCount}</span>
-        </button>
+        </Link>
       </div>
 
       {user && (

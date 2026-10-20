@@ -1,6 +1,7 @@
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useCart } from '../../context/CartContext'
 import { navLinks } from '../../data/site'
 import { useDismissable } from '../../hooks/useDismissable'
 import { IconButton } from '../ui/IconButton'
@@ -13,10 +14,6 @@ import { NavSearch } from './NavSearch'
 
 const LINK =
   'border-b border-transparent py-[6px] transition-colors hover:border-gold'
-
-// El contador es parte del diseño, no del estado de un carrito: el handoff
-// deja la bolsa como UI. Cuando exista carrito, viene de ahí.
-const BAG_COUNT = 3
 
 // `Link` y no un ancla: el logo es la forma de volver a la portada desde /perfil
 // o /catalogo, y con un `href` se recargaría el sitio entero para nada.
@@ -44,6 +41,8 @@ function BrandMark() {
  * pisan; con el actualizador, la segunda ve lo que dejó la primera.
  */
 export function Navbar() {
+  // Las unidades de la bolsa de la sesión, de la base. Sin sesión son 0.
+  const { unidades } = useCart()
   const [menuOpen, setMenuOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState(null)
   const [buscando, setBuscando] = useState(false)
@@ -103,14 +102,14 @@ export function Navbar() {
           <div className="hidden xl:contents">
             <AccountMenu />
 
-            <button
-              type="button"
-              aria-label={`Bolsa de compra, ${BAG_COUNT} artículos`}
+            <Link
+              to="/carrito"
+              aria-label={`Bolsa de compra, ${unidades} artículos`}
               className="flex h-[38px] shrink-0 cursor-pointer items-center gap-[6px] px-[10px] text-[13px] font-semibold whitespace-nowrap text-paper transition-colors hover:text-gold"
             >
               <ShoppingBag size={17} strokeWidth={1.5} />
-              <span>{BAG_COUNT}</span>
-            </button>
+              <span>{unidades}</span>
+            </Link>
           </div>
 
           <IconButton
@@ -133,7 +132,7 @@ export function Navbar() {
           ref={panelRef}
           className="max-h-[calc(100dvh-80px)] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden border-t border-rail bg-ink px-gutter py-4 text-[13px] font-medium tracking-[.18em] uppercase xl:hidden"
         >
-          <NavMobileMenu links={navLinks} closeMenu={closeMenu} bagCount={BAG_COUNT} />
+          <NavMobileMenu links={navLinks} closeMenu={closeMenu} bagCount={unidades} />
         </nav>
       )}
     </header>

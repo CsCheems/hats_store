@@ -63,7 +63,6 @@ function toProductBody(values) {
     titulo: values.titulo,
     descripcion: values.descripcion,
     categoria: values.categoria,
-    marca: values.marca,
     genero: values.genero,
     fieltro: values.fieltro,
     precio: values.precio,
@@ -102,7 +101,8 @@ export function restoreProduct(id) {
 export function uploadProductImage(id, file) {
   return http.post(ENDPOINTS.admin.images(id), file, {
     headers: { 'Content-Type': file.type },
-    timeout: 60000,
+    // 10 MB por una conexión lenta, más el viaje a Storage: 12 s no alcanzan.
+    timeout: 120000,
   })
 }
 

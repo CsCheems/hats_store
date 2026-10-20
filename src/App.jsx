@@ -1,5 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider'
+import { CartProvider } from './context/CartProvider'
+import { FavoritesProvider } from './context/FavoritesProvider'
 import { ThemeProvider } from './context/ThemeProvider'
 import { ToastProvider } from './context/ToastProvider'
 import AdminArchivados from './page/Admin/Archivados/page'
@@ -11,15 +13,19 @@ import Admin from './page/Admin/page'
 import AdminProducto from './page/Admin/Producto/page'
 import AdminProductos from './page/Admin/Productos/page'
 import AdminResumen from './page/Admin/Resumen/page'
+import Cart from './page/Cart/page'
 import Catalog from './page/Catalog/page'
 import Home from './page/Home/page'
+import Product from './page/Product/page'
 import Profile from './page/Profile/page'
+import Saved from './page/Saved/page'
 
-// Tres providers, de fuera adentro: el modo claro/oscuro, los avisos y la sesión.
-// El modo va fuera de todo porque no depende de nada y los avisos y el modal de
-// acceso se dibujan con sus variables. Los avisos van por fuera de la sesión: el
-// modal de acceso los usa, pero la bolsa y el checkout también los van a
-// necesitar.
+// Cinco providers, de fuera adentro: el modo claro/oscuro, los avisos, la sesión,
+// los favoritos y la bolsa. El modo va fuera de todo porque no depende de nada y
+// los avisos y el modal de acceso se dibujan con sus variables. Los avisos van
+// por fuera de la sesión: el modal de acceso los usa, y también los favoritos y
+// la bolsa. Los dos últimos van DENTRO de la sesión porque lo que guardan es de
+// quien la tiene, y se recargan cuando cambia.
 //
 // Envuelven a las rutas y no al revés: el modal de acceso vive dentro de
 // AuthProvider, así que se puede abrir desde cualquier página y sobrevive a la
@@ -30,9 +36,14 @@ export default function App() {
       <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
+        <FavoritesProvider>
+        <CartProvider>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/catalogo" element={<Catalog />} />
+            <Route path="/producto/:slug" element={<Product />} />
+            <Route path="/guardados" element={<Saved />} />
+            <Route path="/carrito" element={<Cart />} />
             <Route path="/perfil" element={<Profile />} />
 
             {/* /admin es una ruta CON HIJAS: la de arriba decide quién pasa y
@@ -61,6 +72,8 @@ export default function App() {
               <Route path="categorias/:id/editar" element={<AdminCategoria />} />
             </Route>
           </Routes>
+        </CartProvider>
+        </FavoritesProvider>
         </AuthProvider>
       </ToastProvider>
       </ThemeProvider>

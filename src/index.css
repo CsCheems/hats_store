@@ -21,7 +21,11 @@
    4.6:1 y 7.4:1; tinta sobre el oro de los botones 7.8:1. El oro NO se usa como
    color de texto sobre el fondo claro (2.0:1): ahí el acento es el teja. El
    verde salvia del sistema original sigue fuera. */
-:root {
+/* `.tema-claro` aplica los valores claros a un contenedor aunque la página esté
+   en oscuro: la vista previa de la tarjeta en el panel tiene que verse como la
+   ve un visitante con el tema por omisión, no como la tenga puesta quien edita. */
+:root,
+.tema-claro {
   --bg-a: #faf6ea;
   --alt: #f2ebd9;
   --fg: #14110d;

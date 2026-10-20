@@ -77,7 +77,6 @@ export const categoryColumns = [
   { key: 'prefijo', label: 'Prefijo', tipo: 'codigo' },
   { key: 'llevaGenero', label: 'Género', tipo: 'booleano' },
   { key: 'admiteFieltro', label: 'Fieltro', tipo: 'booleano' },
-  { key: 'marcas', label: 'Marcas', tipo: 'lista' },
   { key: 'count', label: 'Artículos', tipo: 'entero', align: 'right' },
 ]
 
@@ -172,6 +171,12 @@ export const adminConfirm = {
 // que el panel dice lo que pasó en la propia página, arriba de lo que cambió.
 export const adminNotices = {
   creado: 'Artículo creado. Ya puedes subir sus imágenes.',
+  creadoConImagenes: (n) =>
+    n === 1 ? 'Artículo creado con su imagen. Aquí puedes agregar más.' : `Artículo creado con sus ${n} imágenes.`,
+  // El artículo ya existe cuando falla la subida: no se deshace, se dice y se
+  // deja la galería a mano para reintentar.
+  creadoSinImagen: (fallidas, motivo) =>
+    `Artículo creado, pero ${fallidas === 1 ? 'una imagen no se subió' : `${fallidas} imágenes no se subieron`}: ${motivo} Súbelas desde la galería.`,
   guardado: (titulo) => `Guardamos los cambios de «${titulo}».`,
   archivado: (titulo) => `«${titulo}» quedó archivado.`,
   restaurado: (titulo) => `«${titulo}» volvió al inventario.`,
@@ -203,7 +208,31 @@ export const productFormCopy = {
     clasificacion: 'Clasificación',
     venta: 'Precio y existencias',
     publicacion: 'Publicación',
+    imagen: 'Imagen',
   },
+  vistaPrevia: 'Vista previa',
+  vistaPreviaNota: 'Así se ve la tarjeta en el catálogo de la tienda.',
+  vistaPreviaBorrador: 'Sin publicar: este artículo no saldrá en la tienda.',
+  vistaPreviaTitulo: 'Título del artículo',
+  vistaPreviaCategoria: 'Categoría',
+}
+
+// El campo de imagen del alta. La galería de la edición reúsa las mismas reglas
+// (utils/imageRules.js), pero aquí la imagen solo se elige: se sube al crear.
+export const imagePickerCopy = {
+  ayuda:
+    'Opcional. Hasta 8 imágenes JPG, PNG o WebP de hasta 10 MB cada una, entre 800 × 800 y 5000 × 5000 píxeles. La primera es la principal y se puede cambiar antes de crear el artículo.',
+  elegir: 'Elegir imágenes',
+  agregar: 'Agregar más',
+  quitar: 'Quitar',
+  principal: 'Principal',
+  hacerPrincipal: 'Hacer principal',
+  ninguna: 'Ninguna imagen elegida',
+  contador: (n) => `${n} de 8`,
+  alt: (n) => `Imagen elegida ${n}`,
+  llena: 'Ya elegiste las 8 imágenes que admite un artículo; las que sobraron se descartaron.',
+  avisoProporcion: (ancho, alto) =>
+    `Mide ${ancho} × ${alto}. Se verá recortada en la tarjeta; lo ideal es una vertical 4:5 de al menos 1000 × 1250.`,
 }
 
 /**
@@ -226,18 +255,10 @@ export const productFields = [
     placeholder: 'Elige una categoría',
     seccion: 'clasificacion',
   },
-  {
-    name: 'marca',
-    label: 'Marca',
-    type: 'select',
-    options: 'marcas',
-    dependsOn: 'categoria',
-    placeholder: 'Elige una marca',
-    emptyPlaceholder: 'Primero elige la categoría',
-    // Una categoría recién creada puede no tener marcas todavía.
-    noOptionsPlaceholder: 'Ninguna marca trabaja esta categoría',
-    seccion: 'clasificacion',
-  },
+  // Sin campo de marca: la tienda es de una sola y el servidor pone la única que
+  // hay (productSchema la acepta opcional). Con una segunda marca habría que
+  // devolver aquí el select de `options: 'marcas'`, `dependsOn: 'categoria'`, y
+  // `marca` a `newProductValues`, `toProductValues` y `toProductBody`.
   {
     name: 'genero',
     label: 'Género',
@@ -305,7 +326,6 @@ export const newProductValues = {
   titulo: '',
   descripcion: '',
   categoria: '',
-  marca: '',
   genero: '',
   fieltro: '',
   precio: '',
@@ -322,7 +342,6 @@ export function toProductValues(producto) {
     titulo: producto.titulo,
     descripcion: producto.descripcion,
     categoria: producto.categoria,
-    marca: producto.marca,
     genero: producto.genero ?? '',
     fieltro: producto.fieltro ?? '',
     // 2850.5 se edita como «2850.50»: así se escribe un precio.
@@ -448,7 +467,8 @@ export const toCategoryValues = (categoria) => ({
 export const galleryCopy = {
   titulo: 'Imágenes',
   intro: 'La primera es la principal: la que sale en la tarjeta del catálogo. Hasta 8.',
-  recomendacion: 'JPG, PNG o WebP de hasta 5 MB. Recomendado: vertical 4:5, de 1000 × 1250 o más.',
+  recomendacion:
+    'JPG, PNG o WebP de hasta 10 MB, entre 800 × 800 y 5000 × 5000 píxeles. Se ajustan solas al marco de la tarjeta recortando los bordes. Recomendado: vertical 4:5, de 1000 × 1250 o más.',
   subir: 'Subir imágenes',
   subiendo: (nombre) => `Subiendo ${nombre}…`,
   vacia: 'Este artículo todavía no tiene imágenes.',
@@ -457,10 +477,14 @@ export const galleryCopy = {
   hacerPrincipal: 'Hacer principal',
   quitar: 'Quitar',
   alt: (titulo, n) => `${titulo}, imagen ${n}`,
-  // Comprobaciones antes de subir. Tipo y peso bloquean —el servidor los
-  // rechazaría igual—; las medidas solo avisan.
+  // Comprobaciones antes de subir. Tipo, peso y tamaño mínimo y máximo bloquean
+  // —el servidor los rechazaría igual—; la proporción recomendada solo avisa.
   errorTipo: (nombre) => `«${nombre}» no es JPG, PNG ni WebP.`,
-  errorPeso: (nombre) => `«${nombre}» pesa más de 5 MB.`,
+  errorPeso: (nombre) => `«${nombre}» pesa más de 10 MB.`,
+  errorChica: (nombre, ancho, alto) =>
+    `«${nombre}» mide ${ancho} × ${alto}. Tiene que medir al menos 800 × 800 píxeles.`,
+  errorGrande: (nombre, ancho, alto) =>
+    `«${nombre}» mide ${ancho} × ${alto}. No puede pasar de 5000 × 5000 píxeles.`,
   avisoMedidas: (nombre, ancho, alto) =>
     `«${nombre}» mide ${ancho} × ${alto}. Se subió, pero en la tarjeta se verá mejor una vertical 4:5 de al menos 1000 × 1250.`,
 }
