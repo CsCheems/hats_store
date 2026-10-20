@@ -174,3 +174,23 @@ export function updateCategory(id, values) {
 export function deleteCategory(id) {
   return http.delete(ENDPOINTS.admin.category(id))
 }
+
+// ─── Pedidos ───────────────────────────────────────────────────────────────
+
+// Los pedidos pagados de todos, el más reciente primero, con la forma de las filas
+// de la tabla.
+export function getOrders(options) {
+  return http.get(ENDPOINTS.admin.orders, options)
+}
+
+// Un pedido con su cliente, su envío, sus líneas, el cobro y el desglose. 404 si
+// el folio no existe o no está pagado.
+export function getOrder(folio, options) {
+  return http.get(ENDPOINTS.admin.order(folio), options)
+}
+
+// Pasa el pedido a `enviado`, `entregado` o `cancelado` y devuelve el pedido como
+// quedó. El servidor decide si la transición vale (409 si no).
+export function setOrderState(folio, estado) {
+  return http.put(ENDPOINTS.admin.orderState(folio), { estado })
+}

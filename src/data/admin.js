@@ -22,6 +22,9 @@ export const adminUserMenu = [{ label: 'Volver al sitio', icon: 'site', to: '/' 
 export const adminSidebar = {
   fijos: [
     { label: 'Resumen', icon: 'home', to: '/admin' },
+    // `prefijo`: la entrada sigue encendida en las páginas que cuelgan de ella
+    // (el detalle de un pedido), no solo en la suya.
+    { label: 'Pedidos', icon: 'orders', to: '/admin/pedidos', prefijo: true },
     { label: 'Todo el inventario', icon: 'boxes', to: '/admin/productos' },
     { label: 'Archivados', icon: 'archive', to: '/admin/archivados' },
     // Sin entrada de «Marcas»: la tienda es de una sola. Las rutas y las páginas
@@ -89,6 +92,16 @@ export const pedidoColumns = [
   { key: 'estado', label: 'Estado', tipo: 'estado' },
 ]
 
+// Los filtros de la lista de pedidos. `key` es el valor de `?estado=` en la
+// dirección; «todos» no escribe nada.
+export const orderFilters = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'pendiente', label: 'Pendientes' },
+  { key: 'enviado', label: 'Enviados' },
+  { key: 'entregado', label: 'Entregados' },
+  { key: 'cancelado', label: 'Cancelados' },
+]
+
 // Rótulo y tono de cada estado. Los de producto y los de pedido comparten mapa
 // porque comparten la insignia que los pinta; los tonos viven en el componente.
 export const estados = {
@@ -105,6 +118,14 @@ export const adminCopy = {
   resumenTitulo: 'Resumen',
   pedidosTitulo: 'Últimos pedidos',
   pedidosVacio: 'Todavía no hay pedidos en el periodo.',
+  pedidosTodos: 'Ver todos los pedidos',
+  pedidosListaTitulo: 'Pedidos',
+  pedidosListaIntro: 'Los pedidos pagados de la tienda, del más reciente al más antiguo.',
+  pedidosListaVacio: 'Todavía no hay pedidos pagados.',
+  pedidosFiltroVacio: (label) => `No hay pedidos en «${label}».`,
+  pedidosFiltros: 'Filtrar por estado',
+  pedidosCuenta: (n) => `${n} ${n === 1 ? 'pedido' : 'pedidos'}`,
+  ver: 'Ver',
   stockTitulo: 'Se está acabando',
   stockIntro: (limite) => `Publicados con ${limite} piezas o menos, de menos a más.`,
   stockVacio: 'Nada por debajo del umbral: todo el inventario tiene existencias.',
@@ -164,6 +185,25 @@ export const adminConfirm = {
     confirmar: 'Borrar',
     pendiente: 'Borrando…',
   },
+  pedidoEnviado: {
+    titulo: '¿Marcar como enviado?',
+    cuerpo: (folio) => `${folio} pasa a «Enviado». Ya no se podrá cancelar.`,
+    confirmar: 'Marcar como enviado',
+    pendiente: 'Guardando…',
+  },
+  pedidoEntregado: {
+    titulo: '¿Marcar como entregado?',
+    cuerpo: (folio) => `${folio} pasa a «Entregado». Es el último paso y no se puede deshacer.`,
+    confirmar: 'Marcar como entregado',
+    pendiente: 'Guardando…',
+  },
+  pedidoCancelado: {
+    titulo: '¿Cancelar este pedido?',
+    cuerpo: (folio) =>
+      `${folio} queda cancelado, las piezas vuelven al inventario y se pide a la pasarela devolver el cobro. No se puede deshacer.`,
+    confirmar: 'Cancelar pedido',
+    pendiente: 'Cancelando…',
+  },
   cancelar: 'Cancelar',
 }
 
@@ -188,6 +228,47 @@ export const adminNotices = {
     `Categoría «${nombre}» creada. Asígnala a sus marcas en Marcas para poder dar de alta artículos en ella.`,
   categoriaGuardada: (nombre) => `Guardamos los cambios de «${nombre}».`,
   categoriaBorrada: (nombre) => `«${nombre}» quedó borrada.`,
+  pedidoActualizado: (folio, estado) => `El pedido ${folio} quedó como «${estados[estado]?.label ?? estado}».`,
+}
+
+// ─── Detalle de un pedido ──────────────────────────────────────────────────
+
+export const orderDetailCopy = {
+  volver: 'Volver a pedidos',
+  titulo: (folio) => `Pedido ${folio}`,
+  pagadoEl: (fecha) => `Pagado el ${fecha}`,
+  articulos: 'Artículos',
+  cantidad: (n) => `× ${n}`,
+  cliente: 'Cliente',
+  correo: 'Correo',
+  envio: 'Envío',
+  telefono: 'Teléfono',
+  referencias: 'Referencias',
+  pago: 'Pago',
+  tarjeta: (ultimos4) => `Tarjeta terminada en ${ultimos4}`,
+  referenciaCobro: 'Referencia del cobro',
+  desglose: 'Desglose',
+  piezas: (n) => `${n} ${n === 1 ? 'pieza' : 'piezas'}`,
+  envioCosto: 'Envío',
+  gratis: 'Gratis',
+  base: 'Subtotal sin IVA',
+  iva: (tasa) => `IVA ${Math.round(tasa * 100)}%`,
+  total: 'Total',
+  ivaIncluido: 'IVA incluido',
+  sinAcciones: 'Este pedido ya no admite cambios de estado.',
+  // Qué botones tiene un pedido según su estado: las únicas transiciones que la
+  // base acepta (db/scripts/16). El primero es la acción principal.
+  acciones: {
+    pendiente: [
+      { estado: 'enviado', label: 'Marcar como enviado', variante: 'primary', confirma: 'pedidoEnviado' },
+      { estado: 'cancelado', label: 'Cancelar pedido', variante: 'warn', confirma: 'pedidoCancelado' },
+    ],
+    enviado: [
+      { estado: 'entregado', label: 'Marcar como entregado', variante: 'primary', confirma: 'pedidoEntregado' },
+    ],
+    entregado: [],
+    cancelado: [],
+  },
 }
 
 // ─── Formulario de artículo ────────────────────────────────────────────────

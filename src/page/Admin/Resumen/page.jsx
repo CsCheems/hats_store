@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { AdminState } from '../../../components/admin/AdminState'
 import { AdminTable } from '../../../components/admin/AdminTable'
 import { LowStockList } from '../../../components/admin/LowStockList'
@@ -49,7 +50,12 @@ export default function AdminResumen() {
               como una tabla acaba desbordando en horizontal. */}
           <div className="grid gap-[18px] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <section className="min-w-0">
-              <h2 className="mb-[10px] text-[14px] text-admin-ink">{adminCopy.pedidosTitulo}</h2>
+              <div className="mb-[10px] flex items-baseline justify-between gap-3">
+                <h2 className="text-[14px] text-admin-ink">{adminCopy.pedidosTitulo}</h2>
+                <Link to="/admin/pedidos" className="text-[12px] text-admin-blue hover:underline">
+                  {adminCopy.pedidosTodos}
+                </Link>
+              </div>
               <AdminTable
                 columns={pedidoColumns}
                 rows={data.pedidosRecientes}

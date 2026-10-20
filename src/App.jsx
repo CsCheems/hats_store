@@ -10,12 +10,17 @@ import AdminCategorias from './page/Admin/Categorias/page'
 import AdminMarca from './page/Admin/Marca/page'
 import AdminMarcas from './page/Admin/Marcas/page'
 import Admin from './page/Admin/page'
+import AdminPedido from './page/Admin/Pedido/page'
+import AdminPedidos from './page/Admin/Pedidos/page'
 import AdminProducto from './page/Admin/Producto/page'
 import AdminProductos from './page/Admin/Productos/page'
 import AdminResumen from './page/Admin/Resumen/page'
 import Cart from './page/Cart/page'
 import Catalog from './page/Catalog/page'
+import Checkout from './page/Checkout/page'
 import Home from './page/Home/page'
+import Order from './page/Order/page'
+import Orders from './page/Orders/page'
 import Product from './page/Product/page'
 import Profile from './page/Profile/page'
 import Saved from './page/Saved/page'
@@ -44,6 +49,9 @@ export default function App() {
             <Route path="/producto/:slug" element={<Product />} />
             <Route path="/guardados" element={<Saved />} />
             <Route path="/carrito" element={<Cart />} />
+            <Route path="/compra" element={<Checkout />} />
+            <Route path="/pedidos" element={<Orders />} />
+            <Route path="/pedido/:folio" element={<Order />} />
             <Route path="/perfil" element={<Profile />} />
 
             {/* /admin es una ruta CON HIJAS: la de arriba decide quién pasa y
@@ -53,6 +61,8 @@ export default function App() {
                 donde los dos filtros cuelgan del router y no de cada ruta. */}
             <Route path="/admin" element={<Admin />}>
               <Route index element={<AdminResumen />} />
+              <Route path="pedidos" element={<AdminPedidos />} />
+              <Route path="pedidos/:folio" element={<AdminPedido />} />
               <Route path="productos" element={<AdminProductos />} />
               {/* «nuevo» es un segmento fijo y el router lo prefiere sobre
                   `:categoria`, así que no hay que ordenar nada. Una categoría
