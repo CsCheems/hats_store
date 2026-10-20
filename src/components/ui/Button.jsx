@@ -11,6 +11,11 @@ const VARIANTS = {
   outline: 'border-paper text-paper hover:bg-paper hover:text-ink',
   // Botón discreto de tarjeta o de formulario: contorno suave.
   quiet: 'border-edge text-paper hover:border-paper',
+  // Lo destructivo y sin vuelta atrás —cancelar un pedido—: el rojo del tema, en
+  // contorno para la puerta y macizo para confirmar. Se invierte al pasar por
+  // encima, como el resto.
+  danger: 'border-danger text-danger hover:bg-danger hover:text-ink',
+  'danger-solid': 'border-danger bg-danger text-ink hover:bg-ink hover:text-danger',
 }
 
 /**

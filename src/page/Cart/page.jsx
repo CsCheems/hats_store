@@ -17,8 +17,10 @@ import { formatMoney } from '../../utils/format'
  * quitar artículos y enseña el total. Es de la cuenta, así que sin sesión invita
  * a entrar en vez de redirigir.
  *
- * El pago todavía no existe (no hay pedidos en la base): el botón está, pero
- * deshabilitado y con su nota. Cuando haya checkout, aquí es donde empieza.
+ * «Continuar al pago» lleva a /compra, donde se confirma el envío y se paga con
+ * el desglose del IVA. Aquí solo se enseña el total de los artículos —con IVA
+ * incluido, como todo precio de la tienda—; el envío se calcula en el siguiente
+ * paso.
  *
  * Las cantidades y el total son los que el servidor devolvió en la última
  * escritura; esta página no suma nada por su cuenta, salvo el subtotal de cada
@@ -27,6 +29,12 @@ import { formatMoney } from '../../utils/format'
 export default function Cart() {
   const { user, status: sesion } = useAuth()
   const { items, unidades, total, status, error, ocupada, setQuantity, remove, reload } = useCart()
+
+  // Lo que se puede pagar: algo disponible y sin artículos pidiendo más piezas de
+  // las que quedan. Las mismas dos condiciones que revisa /compra.
+  const disponibles = items.filter((item) => item.disponible)
+  const sinPiezas = disponibles.some((item) => item.cantidad > item.maximo)
+  const puedePagar = disponibles.length > 0 && !sinPiezas
 
   return (
     <div className="min-h-screen overflow-x-hidden">
@@ -85,17 +93,28 @@ export default function Cart() {
                         <dd className="text-paper tabular-nums">{formatMoney(total)}</dd>
                       </div>
                       <div className="flex items-baseline justify-between gap-4 py-4">
-                        <dt className="text-[13px] font-semibold tracking-label text-sand uppercase">{cartCopy.total}</dt>
+                        <dt className="text-[13px] font-semibold tracking-label text-sand uppercase">{cartCopy.subtotal}</dt>
                         <dd className="font-display text-[30px] font-semibold text-paper tabular-nums">
                           {formatMoney(total)}
                         </dd>
                       </div>
                     </dl>
 
-                    <Button disabled className="mt-2 w-full px-[26px] py-[14px]">
-                      {cartCopy.pagar}
-                    </Button>
-                    <p className="mt-3 text-[14px] leading-[1.45] text-sand">{cartCopy.pagarNota}</p>
+                    {/* Se paga con lo que hay, no con lo que se pidió: un artículo del
+                        que ya no quedan tantas piezas frena el pago hasta que se
+                        ajuste su cantidad (el selector ya topa en lo que hay). */}
+                    {puedePagar ? (
+                      <Button as={Link} to="/compra" className="mt-2 w-full px-[26px] py-[14px]">
+                        {cartCopy.pagar}
+                      </Button>
+                    ) : (
+                      <Button disabled className="mt-2 w-full px-[26px] py-[14px]">
+                        {cartCopy.pagar}
+                      </Button>
+                    )}
+                    <p className="mt-3 text-[14px] leading-[1.45] text-sand">
+                      {sinPiezas ? cartCopy.pagarSinPiezas : cartCopy.pagarNota}
+                    </p>
 
                     <Link
                       to="/catalogo"

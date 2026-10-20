@@ -187,7 +187,7 @@ export const authViews = {
 //
 // «Cerrar sesión» no está aquí a propósito: es una acción, no un enlace.
 export const accountMenu = [
-  { label: 'Mis pedidos', icon: 'orders', href: '#' },
+  { label: 'Mis pedidos', icon: 'orders', to: '/pedidos' },
   { label: 'Guardados', icon: 'saved', to: '/guardados' },
   { label: 'Mis datos', icon: 'profile', to: '/perfil' },
   { label: 'Panel de administrador', icon: 'admin', to: '/admin', soloAdmin: true },

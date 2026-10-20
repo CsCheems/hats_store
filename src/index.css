@@ -15,10 +15,11 @@
      rail    → líneas finas                 edge  → líneas de campos y contornos
      gold    → el acento                    field → el fondo de un campo
      rust    → el ámbar de error
+     danger  → el rojo de lo destructivo (cancelar un pedido)
 
    Contrastes medidos: texto sobre fondo 17.4:1 (claro) y 15.8:1 (oscuro);
    secundario 7.2:1 y 10.8:1; acento 5.5:1 (teja) y 7.8:1 (oro); ámbar de error
-   4.6:1 y 7.4:1; tinta sobre el oro de los botones 7.8:1. El oro NO se usa como
+   4.6:1 y 7.4:1; rojo 5.5:1 (sobre el panel claro) y 6.2:1 (sobre el oscuro); tinta sobre el oro de los botones 7.8:1. El oro NO se usa como
    color de texto sobre el fondo claro (2.0:1): ahí el acento es el teja. El
    verde salvia del sistema original sigue fuera. */
 /* `.tema-claro` aplica los valores claros a un contenedor aunque la página esté
@@ -37,6 +38,7 @@
   --hover: #14110d;
   --on-hover: #f2ebd9;
   --amber: #b45309;
+  --danger: #b3261e;
   --photo-a: #e7ddc3;
   --photo-b: #e0d5b8;
   --shadow: rgb(20 17 13 / 0.22);
@@ -68,6 +70,7 @@
   --hover: #f2ebd9;
   --on-hover: #14110d;
   --amber: #e0903a;
+  --danger: #ff6b61;
   --photo-a: #2a2318;
   --photo-b: #241e15;
   --shadow: rgb(0 0 0 / 0.5);
@@ -102,6 +105,7 @@
   --color-leather: var(--accent);
   --color-barn: var(--accent);
   --color-rust: var(--amber);
+  --color-danger: var(--danger);
   --color-bone: var(--fg);
   --color-notice: var(--fg);
   --color-hover: var(--hover);
